@@ -1,163 +1,92 @@
 # biblioteca-web
 
-El frontend Angular de la biblioteca, **en el estado en que empieza el tramo 8
-de L3**: la aplicación funciona, navega y le pide los datos al gateway del
-8080 — y no sabe nada de autenticación.
+Vive en el repositorio **`biblioteca-web-l6`** de la organización. Este es el
+frontend Angular de la biblioteca, congelado **al terminar L4**: es el punto
+de partida de **L6**, para quien no alcanzó a terminar L3 y L4 a tiempo.
 
-Eso último no es un descuido: es el laboratorio.
+Trae resuelto todo lo de L3 (login real contra tu propio user pool de
+Cognito) y de L4 (el panel de préstamos pedido al BFF en una sola llamada).
+No trae nada de L6: ni `amqplib`, ni nada que hable de colas o eventos —eso
+lo agregas tú en L6, contra el gateway y el BFF que también clonaste de
+partida.
 
-Este repositorio es el gemelo de
-[**biblioteca-gateway**](https://github.com/Umbingelelo/biblioteca-gateway),
-que es el backend. Necesitas los dos, forkeados, para L3, L4 y L5.
+## Qué hay en cada archivo
 
-```
-biblioteca-web/
-├── src/
-│   ├── main.ts                     Amplify.configure, COMENTADO ← tramo 8.3
-│   ├── index.html
-│   ├── styles.css
-│   └── app/
-│       ├── app.ts / app.html       el cascarón y la navegación
-│       ├── app.config.ts           provideHttpClient() SIN interceptor ← tramo 8.7
-│       ├── app.routes.ts           las rutas, SIN canActivate ← tramo 8.6
-│       ├── biblioteca.ts           el único que habla con el gateway
-│       ├── libros/                 el catálogo → GET /v1/libros
-│       ├── prestamos/              los préstamos → GET /v1/prestamos
-│       ├── callback/               a donde Cognito devuelve el navegador
-│       └── auth/                   VACÍA: los dos archivos los escribes tú
-└── docs/
-```
+| Archivo | Qué hace |
+|---|---|
+| `src/main.ts` | `Amplify.configure` contra tu user pool, y el listener que canjea el código de OAuth solo |
+| `src/app/app.ts` | El cascarón: botón de login (`entrar()`), el rol `esBibliotecario` leído de `cognito:groups`, y `cargarPanel()` contra el BFF |
+| `src/app/app.html` | La barra de navegación —Préstamos solo si eres bibliotecario— y el botón «Ver mis préstamos» |
+| `src/app/app.routes.ts` | Las rutas, con `canActivate: [sesionGuard]` en `libros` y `prestamos` — **no** en `callback` |
+| `src/app/app.config.ts` | `provideHttpClient(withInterceptors([tokenInterceptor]))` |
+| `src/app/auth/sesion.guard.ts` | Si no hay sesión, manda al login. Si hay, deja pasar |
+| `src/app/auth/token.interceptor.ts` | Adjunta `Authorization: Bearer <token>` solo a las peticiones a `http://localhost:8080` |
+| `src/app/callback/callback.ts` | A dónde vuelve el navegador tras el login; navega a `/libros` cuando la sesión existe |
+| `src/app/biblioteca.ts` | El catálogo y los préstamos, contra el gateway |
+| `src/app/libros/`, `src/app/prestamos/` | Las dos pantallas del catálogo, sin cambios desde L1 |
 
-Cada archivo que te toca modificar tiene arriba un comentario que empieza con
-**🔨** y dice exactamente qué le falta y de qué tramo es. Búscalos:
+## Cómo usarlo si no terminaste L3 y L4
 
-```bash
-grep -rn "🔨" src/
-```
+Parado en `$HOME/DSY1107`:
 
-## Partir
-
-Necesitas **Node 24**. Angular 22 pide `v22.22.3` o superior, o `v24.15.0` o
-superior; si tienes un Node 22 más viejo el `ng` no arranca y el mensaje sí te
-dice por qué.
+1. Haz **Fork** de este repositorio en GitHub.
+2. Si ya tienes una carpeta `biblioteca-web` de un intento anterior, renómbrala primero (por ejemplo `biblioteca-web-anterior`).
+3. Clónalo con el nombre que espera el resto de la guía:
 
 ```bash
-node -v                       # → v24.x
-git clone https://github.com/<tu-usuario>/biblioteca-web.git
+cd $HOME/DSY1107
+git clone https://github.com/TU_USUARIO/biblioteca-web-l6.git biblioteca-web
 cd biblioteca-web
 npm install
+```
+
+4. Pega tus cuatro valores de Cognito en `src/main.ts`, líneas 16 a 21 (dentro
+   del bloque `Amplify.configure`): `userPoolId`, `userPoolClientId`, `domain` —
+   **sin** `https://`— y confirma que el `scope` trae el prefijo
+   `biblioteca/libros.leer`. Los cuatro están en tu `ficha.txt` de L3.
+5. Levántalo:
+
+```bash
 npm start
 ```
 
-Abre **http://localhost:4200**.
+6. Revisa en la consola de Cognito que el **Allowed callback URL** de tu app
+   client siga siendo `http://localhost:4200/callback`, exacto, sin barra
+   final.
 
-`aws-amplify` **ya está en el `package.json`** — no tienes que instalarlo. Con
-treinta forks del mismo repositorio bajando lo mismo a la vez en la misma sala,
-eso son varios minutos que no se pierden. Compruébalo:
+## Cómo se comprueba que quedó bien
 
-```bash
-npm ls aws-amplify
-```
+Con el gateway (`8080`) corriendo, abre **http://localhost:4200**. Aprieta
+**Entrar**: te lleva a la pantalla de login de tu propio dominio de Cognito.
+Entra con `lector@biblioteca.test` y vuelves a `/libros` con el catálogo. Con
+el BFF (`3000`) también corriendo, el botón **Ver mis préstamos** trae tu
+panel en una sola llamada al `8080`. Esa comprobación es la fila 1 de
+«Antes de empezar» de L6.
 
-## Qué tienes que ver la primera vez
+## Lo que no trae
 
-El gateway de L1 responde **401** cuando la petición no trae header
-`Authorization`, y este frontend todavía no manda ninguno. Así que la primera
-vez que abras el catálogo vas a ver esto:
-
-> **El gateway respondió 401.**
-> *No sé quién eres.* La petición salió sin header `Authorization`…
-
-**Eso está bien.** Es el gateway funcionando como puerta. Lo que arregla el
-tramo 8 no es el gateway: es que el frontend consiga un token de verdad y lo
-mande.
-
-Si en cambio ves **código 0**, ahí sí hay algo que arreglar: un `0` no es una
-respuesta HTTP, es que no hubo respuesta. O el gateway no está corriendo, o su
-CORS no permite `http://localhost:4200`.
-
-## Levantar las dos mitades
-
-L3 necesita **cuatro procesos**, y por eso cuatro terminales. No es desorden:
-es cómo se trabaja con esto.
-
-| Terminal | Comando | Carpeta |
-|---|---|---|
-| 1 | `node servicios/libros.mjs` | `biblioteca-gateway/` |
-| 2 | `node servicios/prestamos.mjs` | `biblioteca-gateway/` |
-| 3 | `npm run start:dev` | `biblioteca-gateway/gateway/` |
-| 4 | `npm start` | `biblioteca-web/` |
-
-| Quién | Dónde escucha |
-|---|---|
-| microservicio de libros | `http://localhost:3001` |
-| microservicio de préstamos | `http://localhost:3002` |
-| **gateway** | **`http://localhost:8080`** ← el único que el frontend conoce |
-| **frontend** | **`http://localhost:4200`** |
-
-Los puertos **no son negociables**, y no por capricho:
-
-- El gateway trae `enableCors({ origin: 'http://localhost:4200' })` a mano. Si
-  sirves el frontend en otro puerto, el navegador se niega a entregarle la
-  respuesta al JavaScript y te sale el código 0.
-- `http://localhost:4200/callback` es la **Allowed callback URL** que
-  registraste en tu app client de Cognito. Coincidencia **exacta**, carácter por
-  carácter: `http` y no `https`, y sin barra final.
-
-## Los cuatro valores que necesitas
-
-Del `ficha.txt` de L3. Van en `src/main.ts`:
-
-| Valor | De dónde salió | Forma |
-|---|---|---|
-| `userPoolId` | tramo 1.2 | `us-east-1_` + 9 caracteres |
-| `userPoolClientId` | tramo 4 | ~26 caracteres alfanuméricos, sin guiones |
-| `domain` | tramo 2 | `algo.auth.us-east-1.amazoncognito.com` — **sin `https://`** |
-| scope | tramo 3.3 | `biblioteca/libros.leer` — con el prefijo |
-
-Ninguno es secreto. Un cliente público **no tiene** secretos: tu código corre
-en el navegador del usuario y cualquier cosa que le pongas está a un clic
-derecho de distancia. Por eso existe PKCE — es lo que reemplaza al secreto que
-no puedes tener.
-
-## Probarlo
-
-```bash
-npm test          # las unitarias, con vitest
-npm run build     # que compile de verdad, con las optimizaciones de producción
-```
-
-Las pruebas que vienen comprueban lo que se puede comprobar sin AWS: que la
-aplicación arranca, que las rutas existen, y que el servicio le pega al
-**8080** y no a los microservicios directo. Esa última es la que vale: apuntar
-`biblioteca.ts` al 3001 **no da ningún error** — responde 200, con datos
-válidos, rodeando el gateway. *Un gateway no protege lo que se puede rodear.*
+Nada de L6: sin colas, sin `amqplib`, sin `biblioteca-eventos` ni
+`biblioteca-admin`. Eso es del gateway y del BFF, no de este frontend.
 
 ## Sobre las versiones
 
 `package.json` fija las dependencias **exactas**, sin `^`, y el
-`package-lock.json` está versionado. No es pedantería: con treinta forks del
-mismo repositorio, un `^22.1.0` que un mes después resuelve a otra versión menor
-convierte «en mi computador funciona» en un problema que no se puede ayudar a
-distancia.
+`package-lock.json` está versionado.
 
 ```bash
-npm ci        # instala desde el lock, sin recalcular nada
+npm ci            # instala desde el lock, sin recalcular nada
+npx ng build       # que compile de verdad, con las optimizaciones de produccion
 ```
 
-## Si algo te falló
+## Si algo te falla
 
 | Lo que ves | Qué pasó | Qué haces |
 |---|---|---|
-| `The Angular CLI requires a minimum Node.js version` | Tu Node es más viejo que lo que pide Angular 22 | Instala Node 24. Lo de L0 |
-| La página dice **401** | El frontend no manda token todavía | Es lo correcto antes del tramo 8 |
-| La página dice **403** | El token es válido y le falta el scope o el grupo | Tramo 8.5: ¿usaste `signInWithRedirect()`? |
-| La página dice **código 0** | No hubo respuesta | ¿Está el gateway en el 8080? ¿Su CORS permite el 4200? |
-| Vuelves del login con `?code=` y no pasa nada | Falta `import 'aws-amplify/auth/enable-oauth-listener'` | `src/main.ts`, tramo 8.3 |
-| La URL del login sale con `https://https://` | Le pusiste el esquema al `domain` | Va solo el host. Tramo 8.3 |
-| `redirect_mismatch` en la pantalla de Cognito | El callback no coincide **exacto** | `http://localhost:4200/callback`, sin barra final |
-| `invalid_scope` | Escribiste `libros.leer` sin el prefijo | Es `biblioteca/libros.leer`. Tramo 3.3 |
-| `EADDRINUSE` en el 4200 | Quedó otra copia corriendo | `lsof -ti:4200 \| xargs kill -9` en macOS y Linux; `netstat -ano \| findstr :4200` y `taskkill /PID <n> /F` en Windows |
+| `The Angular CLI requires a minimum Node.js version` | Tu Node es más viejo que lo que pide Angular 22 | Instala Node 24 |
+| La página dice **401** | El interceptor no mandó el token, o no hay sesión | Revisa que hiciste login con `signInWithRedirect()` |
+| La página dice **403** | El token es válido pero le falta el scope o el grupo | ¿Entraste con el usuario correcto? |
+| **código 0** en el panel | No hubo respuesta | ¿Está el gateway en el `8080` y el BFF en el `3000`? |
+| `redirect_mismatch` en Cognito | El callback no coincide **exacto** | `http://localhost:4200/callback`, sin barra final |
+| `EADDRINUSE` en el `4200` | Quedó otra copia corriendo | `lsof -ti:4200 \| xargs kill -9` en macOS y Linux; `netstat -ano \| findstr :4200` y `taskkill /PID <n> /F` en Windows |
 
-Y antes de irte de la sala, **corta los procesos** con `Ctrl+C` en cada
-terminal.
+Y antes de irte de la sala, corta los procesos con `Ctrl+C` en cada terminal.
