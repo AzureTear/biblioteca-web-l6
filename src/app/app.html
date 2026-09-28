@@ -2,7 +2,9 @@
   <h1>Biblioteca</h1>
   <nav>
     <a routerLink="/libros" routerLinkActive="activo">Catálogo</a>
-    <a routerLink="/prestamos" routerLinkActive="activo">Préstamos</a>
+    @if (esBibliotecario()) {
+      <a routerLink="/prestamos" routerLinkActive="activo">Préstamos</a>
+    }
   </nav>
 
   <button (click)="entrar()">Entrar</button>
