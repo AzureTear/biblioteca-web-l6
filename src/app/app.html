@@ -8,6 +8,16 @@
   </nav>
 
   <button (click)="entrar()">Entrar</button>
+
+  <button (click)="cargarPanel()" [disabled]="cargando()">Ver mis prestamos</button>
+
+  <ul>
+    @for (p of panel(); track p.id) {
+      <li>{{ p.libro.titulo }} — {{ p.libro.autor }}, hasta el {{ p.hasta }}</li>
+    } @empty {
+      <li>No tienes prestamos.</li>
+    }
+  </ul>
 </header>
 
 <main>
