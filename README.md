@@ -1,8 +1,8 @@
-# biblioteca-web
+# biblioteca-web-l6
 
-Vive en el repositorio **`biblioteca-web-l6`** de la organización. Este es el
-frontend Angular de la biblioteca, congelado **al terminar L4**: es el punto
-de partida de **L6**, para quien no alcanzó a terminar L3 y L4 a tiempo.
+El frontend Angular del proyecto guía, **tal como queda al terminar L4**. Es el punto de partida de
+**L6** para quien no alcanzó a terminar L3 y L4. Si ya tienes tu propio `biblioteca-web` con L4
+completo, **no necesitas este repositorio**: sigue con el tuyo.
 
 Trae resuelto todo lo de L3 (login real contra tu propio user pool de
 Cognito) y de L4 (el panel de préstamos pedido al BFF en una sola llamada).
@@ -27,11 +27,13 @@ partida.
 
 ## Cómo usarlo si no terminaste L3 y L4
 
-Parado en `$HOME/DSY1107`:
+Necesitas **Node 24.15.0 o superior** y **npm 11**.
 
-1. Haz **Fork** de este repositorio en GitHub.
+1. Abre [github.com/Umbingelelo/biblioteca-web-l6](https://github.com/Umbingelelo/biblioteca-web-l6)
+   y aprieta **Fork**.
 2. Si ya tienes una carpeta `biblioteca-web` de un intento anterior, renómbrala primero (por ejemplo `biblioteca-web-anterior`).
-3. Clónalo con el nombre que espera el resto de la guía:
+3. Clona **tu** fork con el nombre que espera el resto de la guía. Los mismos comandos sirven en
+   Windows (PowerShell), macOS y Linux, uno por línea:
 
 ```bash
 cd $HOME/DSY1107
@@ -60,8 +62,8 @@ Con el gateway (`8080`) corriendo, abre **http://localhost:4200**. Aprieta
 **Entrar**: te lleva a la pantalla de login de tu propio dominio de Cognito.
 Entra con `lector@biblioteca.test` y vuelves a `/libros` con el catálogo. Con
 el BFF (`3000`) también corriendo, el botón **Ver mis préstamos** trae tu
-panel en una sola llamada al `8080`. Esa comprobación es la fila 1 de
-«Antes de empezar» de L6.
+panel en una sola llamada al `8080`. Esa comprobación es la fila de `biblioteca-web` en
+«Antes de empezar» §1 de L6.
 
 ## Lo que no trae
 
