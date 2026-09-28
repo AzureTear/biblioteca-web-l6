@@ -39,13 +39,18 @@ Necesitas **Node 24.15.0 o superior** y **npm 11**.
 cd $HOME/DSY1107
 git clone https://github.com/TU_USUARIO/biblioteca-web-l6.git biblioteca-web
 cd biblioteca-web
-npm install
+npm ci
 ```
 
-4. Pega tus cuatro valores de Cognito en `src/main.ts`, líneas 16 a 21 (dentro
-   del bloque `Amplify.configure`): `userPoolId`, `userPoolClientId`, `domain` —
-   **sin** `https://`— y confirma que el `scope` trae el prefijo
-   `biblioteca/libros.leer`. Los cuatro están en tu `ficha.txt` de L3.
+`npm ci` y no `npm install`: instala exactamente lo del `package-lock.json` y no lo reescribe, así que
+no te queda un archivo modificado que después se cuela en tu commit. Si clonaste
+`Umbingelelo/biblioteca-web-l6` sin forkear, lo notas recién en el `git push` (un 403): forkea y
+`git remote set-url origin https://github.com/TU_USUARIO/biblioteca-web-l6.git`, sin volver a clonar.
+
+4. Pega tus **tres** valores de Cognito en `src/main.ts`, líneas 16 a 20 (dentro del bloque
+   `Amplify.configure`): `userPoolId`, `userPoolClientId` y `domain`, este **sin** `https://` aunque en
+   tu ficha lo tenga. Confirma en la línea 21 que `scopes` trae `biblioteca/libros.leer`. Los tres están
+   en tu `ficha.txt` de L3.
 5. Levántalo:
 
 ```bash
@@ -90,5 +95,11 @@ npx ng build       # que compile de verdad, con las optimizaciones de produccion
 | **código 0** en el panel | No hubo respuesta | ¿Está el gateway en el `8080` y el BFF en el `3000`? |
 | `redirect_mismatch` en Cognito | El callback no coincide **exacto** | `http://localhost:4200/callback`, sin barra final |
 | `EADDRINUSE` en el `4200` | Quedó otra copia corriendo | `lsof -ti:4200 \| xargs kill -9` en macOS y Linux; `netstat -ano \| findstr :4200` y `taskkill /PID <n> /F` en Windows |
+| Aprietas **Entrar** y no pasa nada | Ya hay una sesión abierta (en la consola, F12: `UserAlreadyAuthenticatedException`) | Para entrar con otro usuario abre una **ventana privada** (Ctrl+Shift+N) en http://localhost:4200 |
+
+**El access token, si no tienes el `token.mjs` de L3.** Con la sesión abierta, aprieta *Ver mis
+préstamos*, abre F12 > *Network* > la petición `panel` > *Request Headers* > `authorization`, y copia lo
+que va después de `Bearer `. Es el `<TOKEN_LECTOR>` que piden los `curl` de L6 (o `<TOKEN_INVITADO>`,
+si entraste con `invitado@` en una ventana privada).
 
 Y antes de irte de la sala, corta los procesos con `Ctrl+C` en cada terminal.
