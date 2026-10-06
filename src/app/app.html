@@ -11,6 +11,7 @@
 
   <button (click)="cargarPanel()" [disabled]="cargando()">Ver mis prestamos</button>
 
+  <button (click)="pedirPrestamo(3)">Pedir el libro 3</button>
   <ul>
     @for (p of panel(); track p.id) {
       <li>{{ p.libro.titulo }} — {{ p.libro.autor }}, hasta el {{ p.hasta }}</li>
